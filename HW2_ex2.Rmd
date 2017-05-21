@@ -1,0 +1,94 @@
+---
+title: "Social and Economic Networks: exercise 2"
+author: "Katrina Walker, Frank Fanteev, David Rosenfeld"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### a)
+
+This exercise was done in a separate document because it used igraph in R and we were not able to include it in the Jupyter notebook alongside the rest.
+
+Here we import a dataset from SNAP about the California road network. Here are a couple of basic statistics about the dataset:
+
+```{r, echo = FALSE, message = FALSE}
+library(igraph)
+
+
+california <- read.graph("roadNet-CA.txt", format = "edgelist")
+
+paste("Number of nodes:", gorder(california))
+paste("Number of edges:", ecount(california))
+```
+
+We then compute degree centrality, eigenvector centrality, PageRank centrality and HITS centrality for each node, and save the top 100 most central nodes in each case:
+
+```{r, echo = FALSE}
+
+# Compute degree centrality for each node
+degree_calif <- degree(california)
+deg_names <- order(order(degree_calif, decreasing=T))
+names(deg_names) <- names(degree_calif)
+top_deg <- deg_names[0:100]
+
+# Compute eigenvector centrality for each node
+eigen_calif <- centr_eigen(california, directed = FALSE, scale = TRUE)
+eigen_names <- order(order(eigen_calif$vector, decreasing=T))
+names(eigen_names) <- names(eigen_calif$vector)
+top_eigen <- eigen_names[0:100]
+
+# Compute PageRank for each node
+pagerank_calif <- page_rank(california, damping = 0.85)
+pagerank_names <- order(order(pagerank_calif$vector, decreasing=T))
+names(pagerank_names) <- names(pagerank_calif$vector)
+top_pagerank <- pagerank_names[0:100]
+
+# Compute HITS centrality for each node
+hits_calif <- authority_score(california)
+hits_names <- order(order(hits_calif$vector, decreasing=T))
+names(hits_names) <- names(hits_calif$vector)
+top_hits <- hits_names[0:100]
+
+```
+
+We then look at which nodes appear in all of the top 100 lists, or a least in 2 distinct sets of top 100 list:
+
+```{r, echo = FALSE}
+
+paste("Nodes in the top 100 most central in all centrality measures: ", Reduce(intersect, list(top_deg, top_eigen, top_pagerank, top_hits)))
+
+paste("Nodes in the top 100 most central in degree centrality and eigenvector centrality: ", intersect(top_deg, top_eigen))
+
+paste("Nodes in the top 100 most central in degree centrality and PageRank centrality: ", intersect(top_deg, top_pagerank))
+
+paste("Nodes in the top 100 most central in degree centrality and HITS centrality: ", intersect(top_deg, top_hits))
+
+paste("Nodes in the top 100 most central in eigenvector centrality and PageRank centrality: ", intersect(top_eigen, top_pagerank))
+
+paste("Nodes in the top 100 most central in eigenvector centrality and HITS centrality: ", intersect(top_eigen, top_hits))
+
+paste("Nodes in the top 100 most central in PageRank centrality and HITS centrality: ", intersect(top_pagerank, top_hits))
+
+
+```
+
+In conclusion, there is only 1 node (node #1965207) in common among all the 100 most central nodes using different centrality measures. This node appears both in the most central nodes in terms of degree centrality and PageRank centrality. In short, the different centrality measures produce very different rankings of nodes in terms of centrality.
+
+### b)
+
+We now consider some of the macro properties of the graph by calculating the diameter and average distance. Unfortunately, the graph was so large that the calculations took so long, so for the purpose of demonstrating how to compute these macro properties, we use a random subsample of the graph roughly half the size:
+
+```{r, echo = FALSE}
+
+cal_small <- delete.edges(california, sample(E(california), 2500000))
+
+paste("Diameter of the network: ", diameter(cal_small))
+paste("Average distance of the network: ", mean_distance(cal_small))
+paste("Number of triangles in the network: ", sum(count_triangles(cal_small)))
+paste("Average clustering coefficient: ", transitivity(cal_small, type = "global"))
+
+```
+
